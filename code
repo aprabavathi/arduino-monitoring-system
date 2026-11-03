@@ -1,0 +1,94 @@
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <DHT.h>
+
+#define DHTPIN 2
+#define DHTTYPE DHT22
+#define BUZZER 8
+
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+
+DHT dht(DHTPIN, DHTTYPE);
+
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+
+void setup() {
+
+  dht.begin();
+  pinMode(BUZZER, OUTPUT);
+
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    while (1);
+  }
+
+  display.clearDisplay();
+  display.setTextColor(SSD1306_WHITE);
+
+  display.setTextSize(1);
+  display.setCursor(25, 25);
+  display.println("TEMP MONITOR");
+
+  display.display();
+  delay(2000);
+}
+
+void loop() {
+
+  float temperature = dht.readTemperature();
+  float humidity = dht.readHumidity();
+
+  if (isnan(temperature) || isnan(humidity)) {
+    display.clearDisplay();
+
+    display.setCursor(20, 25);
+    display.println("DHT22 ERROR");
+
+    display.display();
+
+    digitalWrite(BUZZER, LOW);
+
+    delay(2000);
+    return;
+  }
+
+  display.clearDisplay();
+
+  display.setTextSize(1);
+
+  display.setCursor(0, 0);
+  display.println("ENVIRONMENT MONITOR");
+
+  display.drawLine(0, 10, 127, 10, SSD1306_WHITE);
+
+  display.setCursor(0, 20);
+  display.print("Temp : ");
+  display.print(temperature, 1);
+  display.println(" C");
+
+  display.setCursor(0, 35);
+  display.print("Hum  : ");
+  display.print(humidity, 1);
+  display.println(" %");
+
+  // Temperature warning
+  if (temperature >= 35) {
+
+    display.setCursor(0, 52);
+    display.println("HIGH TEMP!");
+
+    digitalWrite(BUZZER, HIGH);
+
+  } else {
+
+    display.setCursor(0, 52);
+    display.println("NORMAL");
+
+    digitalWrite(BUZZER, LOW);
+  }
+
+  display.display();
+
+  delay(2000);
+}
